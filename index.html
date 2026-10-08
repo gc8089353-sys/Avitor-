@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carrier Landing · Pay to Play</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+        }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: linear-gradient(145deg, #0b1a2e 0%, #1a2f42 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+        .game-container {
+            max-width: 840px;
+            width: 100%;
+            background: rgba(18, 30, 41, 0.85);
+            backdrop-filter: blur(8px);
+            border-radius: 48px;
+            box-shadow: 0 25px 40px -10px rgba(0, 0, 0, 0.8), inset 0 1px 3px rgba(255, 255, 255, 0.08);
+            border: 1px solid #2d4b62;
+            padding: 28px 28px 36px;
+            transition: all 0.2s;
+        }
+        .carrier-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 18px;
+            padding: 0 10px;
+        }
+        .carrier-header h1 {
+            font-size: 2.1rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            margin: 0;
+            color: #eef6ff;
+            text-shadow: 0 2px 0 #0a121c, 0 0 18px #3d8ec0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .carrier-header h1 span {
+            font-size: 2.4rem;
+            filter: drop-shadow(0 0 8px #5ab0e0);
+        }
+        .wallet {
+            background: #0b141e;
+            border-radius: 100px;
+            padding: 8px 22px;
+            border: 1px solid #3e617b;
+            box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.6), 0 2px 0 #1e3346;
+            color: #b9e2ff;
+            font-weight: 600;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .wallet .coin {
+            color: #ffcd6b;
+            font-size: 1.6rem;
+            line-height: 1;
+        }
+        .canvas-wrapper {
+            position: relative;
+            border-radius: 28px;
+            overflow: hidden;
+            box-shadow: inset 0 0 30px #00000066, 0 12px 25px -5px black;
+            border: 2px solid #294b63;
+            background: #0e1a24;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            aspect-ratio: 800 / 400;
+            cursor: pointer;
+            background: radial-gradient(circle at 30% 30%, #2b4f6e, #0f1f2e);
+        }
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 18px 8px 6px;
+            color: #bad7f0;
+            font-weight: 500;
+            text-shadow: 0 1px 3px black;
+        }
+        .message-box {
+            background: #08121bcc;
+            padding: 10px 22px;
+            border-radius: 60px;
+            font-size: 1.1rem;
+            border: 1px solid #335e7a;
+            backdrop-filter: blur(4px);
+            letter-spacing: 0.3px;
+            color: #dcf0ff;
+            box-shadow: inset 0 2px 8px #00000055;
+        }
+        .score-box {
+            background: #08121bcc;
+            padding: 10px 26px;
+            border-radius: 60px;
+            font-size: 1.1rem;
+            border: 1px solid #335e7a;
+            backdrop-filter: blur(4px);
+            display: flex;
+            gap: 16px;
+        }
+        .score-box span {
+            color: #ffd966;
+            font-weight: 700;
+            margin-left: 5px;
+        }
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 18px;
+            justify-content: center;
+            margin-top: 24px;
+        }
+        button {
+            background: linear-gradient(180deg, #294a63 0%, #0d1f2c 100%);
+            border: none;
+            border-radius: 60px;
+            padding: 16px 42px;
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            box-shadow: 0 10px 0 #0b131c, 0 8px 25px #000000aa, inset 0 1px 4px #99c9ff88;
+            cursor: pointer;
+            transition: 0.08s linear;
+            border: 1px solid #3b6d8f;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            flex: 0 1 auto;
+        }
+        button:active {
+            transform: translateY(5px);
+            box-shadow: 0 5px 0 #0b131c, 0 8px 25px #000000aa;
+        }
+        button:disabled {
+            opacity: 0.55;
+            transform: translateY(5px);
+            box-shadow: 0 5px 0 #0b131c, 0 8px 25px #000000aa;
+            pointer-events: none;
+            filter: grayscale(0.4);
+        }
+        .pay-btn {
+            background: linear-gradient(180deg, #c99b3b 0%, #7a561b 100%);
+            box-shadow: 0 10px 0 #4d3610, 0 8px 25px #000000aa, inset 0 1px 4px #ffe28b;
+            border-color: #e7b85c;
+            color: #1d160a;
+            text-shadow: 0 1px 0 #ffde9e;
+        }
+        .pay-btn:active {
+            box-shadow: 0 5px 0 #4d3610, 0 8px 25px #000000aa;
+        }
+        .reset-btn {
+            background: linear-gradient(180deg, #3a4e5e 0%, #1b2a36 100%);
+            box-shadow: 0 10px 0 #0d161f, 0 8px 25px #000000aa;
+            border-color: #5f829b;
+            padding: 16px 32px;
+            font-size: 1.1rem;
+        }
+        .payment-hint {
+            text-align: center;
+            font-size: 0.95rem;
+            color: #9ab9d0;
+            margin-top: 14px;
+            letter-spacing: 0.5px;
+            background: #07101880;
+            padding: 6px 12px;
+            border-radius: 60px;
+            display: inline-block;
+            margin-left: auto;
+            margin-right: auto;
+            width: fit-content;
+            backdrop-filter: blur(3px);
+        }
+        .flex-center {
+            display: flex;
+            justify-content: center;
+        }
+        .glow {
+            animation: pulse-glow 2s infinite;
+        }
+        @keyframes pulse-glow {
+            0% { text-shadow: 0 0 5px #ffbb33; }
+            50% { text-shadow: 0 0 25px #ffdd88, 0 0 10px #ffaa00; }
+            100% { text-shadow: 0 0 5px #ffbb33; }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <!-- header -->
+        <div class="carrier-header">
+            <h1>
+                <span>🛩️</span> CARRIER LANDING
+            </h1>
+            <div class="wallet">
+                <span class="coin">⛁</span> <span id="creditDisplay">100</span>
+            </div>
+        </div>
+
+        <!-- game canvas -->
+        <div class="canvas-wrapper">
+            <canvas id="gameCanvas" width="800" height="400"></canvas>
+        </div>
+
+        <!-- status & score -->
+        <div class="status-bar">
+            <div class="message-box" id="statusMessage">⏸️ Insert coin · pay to play</div>
+            <div class="score-box">
+                <div>🛬 Landings: <span id="scoreDisplay">0</span></div>
+                <div>💥 Crashes: <span id="crashDisplay">0</span></div>
+            </div>
+        </div>
+
+        <!-- buttons -->
+        <div class="controls">
+            <button class="pay-btn" id="payButton">💰 Pay 20 ¢</button>
+            <button id="playButton" disabled>▶ PLAY (20¢)</button>
+            <button class="reset-btn" id="resetButton">🔄 Reset</button>
+        </div>
+        <div class="flex-center">
+            <div class="payment-hint">💡 Click "PAY 20¢" to add credits · then press PLAY</div>
+        </div>
+    </div>
+
+    <script>
+        (function(){
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+
+            // ---------- game state ----------
+            let credits = 100;                 // start with some credits so user can test
+            let landings = 0;
+            let crashes = 0;
+
+            // flight state
+            let gameActive = false;            // true when plane is flying & controllable
+            let gameOverFlag = false;          // for win/crash animation? we simply reset
+
+            // plane physics
+            let plane = {
+                x: 130,
+                y: 180,
+                vy: 0,
+                gravity: 0.12,
+                lift: -0.32,
+                angle: 0.0
+            };
+
+            // carrier deck (target area)
+            const carrier = {
+                x: 620,
+                y: 320,
+                width: 130,
+                height: 16
+            };
+
+            // bounds / constants
+            const GROUND_Y = 360;
+            const MIN_SAFE_SPEED = -2.8;      // if vy < this → too hard landing (crash)
+            const MAX_SAFE_SPEED = 2.2;       // if vy > this → too fast downward → crash
+
+            // messages
+            const statusEl = document.getElementById('statusMessage');
+            const creditEl = document.getElementById('creditDisplay');
+            const scoreEl = document.getElementById('scoreDisplay');
+            const crashEl = document.getElementById('crashDisplay');
+            const payBtn = document.getElementById('payButton');
+            const playBtn = document.getElementById('playButton');
+            const resetBtn = document.getElementById('resetButton');
+
+            // ---------- helper: update UI ----------
+            function updateUI() {
+                creditEl.textContent = credits;
+                scoreEl.textContent = landings;
+                crashEl.textContent = crashes;
+
+                // Play button enabled if credits >= 20 and game not active
+                if (credits >= 20 && !gameActive) {
+                    playBtn.disabled = false;
+                } else {
+                    playBtn.disabled = true;
+                }
+
+                // if game active, keep play disabled anyway
+                if (gameActive) playBtn.disabled = true;
+            }
+
+            // ---------- reset plane to start position ----------
+            function resetPlane() {
+                plane.x = 130;
+                plane.y = 180;
+                plane.vy = 0;
+                plane.angle = 0;
+            }
+
+            // ---------- start a paid flight ----------
+            function startGame() {
+                if (gameActive) return;          // already flying
+                if (credits < 20) {
+                    statusEl.textContent = '❌ Not enough credits — pay 20¢';
+                    updateUI();
+                    return;
+                }
+
+                // deduct credits
+                credits -= 20;
+                updateUI();
+
+                // reset plane and game flags
+                resetPlane();
+                gameActive = true;
+                gameOverFlag = false;
+                statusEl.textContent = '✈️ FLYING · press SPACE / click to lift';
+                // disable play button immediately
+                playBtn.disabled = true;
+                updateUI();
+
+                // make sure canvas focus? not needed
+            }
+
+            // ---------- crash / success handling ----------
+            function handleCrash(reason) {
+                if (!gameActive) return;
+                gameActive = false;
+                crashes++;
+                statusEl.textContent = `💥 ${reason} — pay again to retry`;
+                updateUI();
+                // reset plane visually after crash but keep position? we reset in next play
+                // but we also reset on next start
+                // disable play until paid
+                playBtn.disabled = (credits < 20);
+                updateUI();
+            }
+
+            function handleLanding() {
+                if (!gameActive) return;
+
+                // check speed
+                if (plane.vy < MIN_SAFE_SPEED) {
+                    handleCrash('Too steep!');
+                    return;
+                }
+                if (plane.vy > MAX_SAFE_SPEED) {
+                    handleCrash('Too fast!');
+                    return;
+                }
+
+                // success
+                gameActive = false;
+                landings++;
+                statusEl.textContent = '✅ PERFECT LANDING! +1';
+                updateUI();
+                // keep plane at landing position? we reset in draw, but we'll clamp it later
+                // optionally freeze plane on deck
+                plane.y = carrier.y - 12;   // sit on deck
+                plane.vy = 0;
+                plane.angle = 0;
+                // enable play if enough credits
+                if (credits >= 20) playBtn.disabled = false;
+                else playBtn.disabled = true;
+                updateUI();
+            }
+
+            // ---------- handle "out of bounds" or sea crash ----------
+            function checkBoundsAndCarrier() {
+                if (!gameActive) return;
+
+                // left/right boundaries — if plane leaves left or right, crash
+                if (plane.x < 10) {
+                    handleCrash('Flew off left');
+                    return;
+                }
+                if (plane.x > 780) {
+                    handleCrash('Flew off right');
+                    return;
+                }
+
+                // ground / sea crash
+                if (plane.y > GROUND_Y - 10) {
+                    // if beyond carrier, crash into sea
+                    if (!(plane.x >= carrier.x && plane.x <= carrier.x + carrier.width)) {
+                        handleCrash('Crashed into sea');
+                        return;
+                    }
+                }
+
+                // check carrier landing zone
+                const onCarrierX = (plane.x >= carrier.x && plane.x <= carrier.x + carrier.width);
+                const nearDeckY = (plane.y >= carrier.y - 14 && plane.y <= carrier.y + 8);
+
+                if (onCarrierX && nearDeckY) {
+                    // if vy in safe range and not too fast upward? we already check speed in landing handler
+                    // but we need to confirm we are not extremely steep upward (unlikely)
+                    if (plane.vy >= MIN_SAFE_SPEED && plane.vy <= MAX_SAFE_SPEED) {
+                        handleLanding();
+                    } else {
+                        // too fast or too steep, but still on carrier → crash
+                        if (plane.vy < MIN_SAFE_SPEED) handleCrash('Too steep!');
+                        else if (plane.vy > MAX_SAFE_SPEED) handleCrash('Too fast!');
+                        else handleCrash('Hard landing'); // fallback
+                    }
+                    return;
+                }
+
+                // if plane touches ground but outside carrier (already checked sea, but if y hits ground and not carrier)
+                if (plane.y >= GROUND_Y - 8) {
+                    if (!(plane.x >= carrier.x && plane.x <= carrier.x + carrier.width)) {
+                        handleCrash('Splashdown!');
+                    } else {
+                        // on carrier but too low? we already check above, but just in case
+                        if (plane.vy >= MIN_SAFE_SPEED && plane.vy <= MAX_SAFE_SPEED) {
+                            handleLanding();
+                        } else {
+                            handleCrash('Hard landing');
+                        }
+                    }
+                }
+            }
+
+            // ---------- update physics ----------
+            function updatePhysics() {
+                if (!gameActive) return;
+
+                // gravity
+                plane.vy += plane.gravity;
+                // clamp vertical speed for playability (avoid infinite fall)
+                if (plane.vy > 5) plane.vy = 5;
+                if (plane.vy < -5) plane.vy = -5;
+
+                // apply velocity
+                plane.y += plane.vy;
+
+                // slight angle based on vy
+                plane.angle = Math.max(-0.3, Math.min(0.3, plane.vy * 0.1));
+
+                // auto-forward movement (constant horizontal speed)
+                plane.x += 2.2;   // forward speed
+
+                // check bounds and landing conditions
+                checkBoundsAndCarrier();
+
+                // if game became inactive due to crash/landing, we must not continue physics next frame
+                // but we still call updateUI etc inside handlers
+            }
+
+            // ---------- drawing ----------
+            function drawSkyAndSea() {
+                // sky gradient
+                const skyGrad = ctx.createLinearGradient(0, 0, 0, 400);
+                skyGrad.addColorStop(0, '#1c3f5c');
+                skyGrad.addColorStop(0.7, '#4f7b9c');
+                ctx.fillStyle = skyGrad;
+                ctx.fillRect(0, 0, 800, 400);
+
+                // clouds (static)
+                ctx.fillStyle = '#ffffff30';
+                ctx.beginPath();
+                ctx.arc(120, 70, 40, 0, Math.PI*2);
+                ctx.arc(170, 50, 35, 0, Math.PI*2);
+                ctx.arc(70, 60, 30, 0, Math.PI*2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(650, 100, 45, 0, Math.PI*2);
+                ctx.arc(710, 80, 35, 0, Math.PI*2);
+                ctx.arc(600, 80, 30, 0, Math.PI*2);
+                ctx.fill();
+
+                // sea
+                const seaGrad = ctx.createLinearGradient(0, 340, 0, 400);
+                seaGrad.addColorStop(0, '#1e4b6e');
+                seaGrad.addColorStop(1, '#0a1c2b');
+                ctx.fillStyle = seaGrad;
+                ctx.fillRect(0, 340, 800, 60);
+
+                // sea waves
+                ctx.strokeStyle = '#99c9e080';
+                ctx.lineWidth = 2;
+                for (let i=0; i<15; i++) {
+                    let x = (i*70 + performance.now()*0.02) % 900 - 50;
+                    let y = 350 + Math.sin(i*0.8 + performance.now()*0.005)*6;
+                    ctx.beginPath();
+                    ctx.moveTo(x, y);
+                    ctx.lineTo(x+35, y-5);
+                    ctx.stroke();
+                }
+            }
+
+            function drawCarrier() {
+                // carrier deck
+                ctx.shadowColor = '#00000080';
+                ctx.shadowBlur = 12;
+                ctx.fillStyle = '#3a4e5e';
+                ctx.beginPath();
+                ctx.roundRect(carrier.x, carrier.y, carrier.width, carrier.height, 8);
+                ctx.fill();
+
+                // deck markings
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = '#f0e68c';
+                ctx.fillRect(carrier.x+10, carrier.y-2, 30, 4);
+                ctx.fillRect(carrier.x+90, carrier.y-2, 30, 4);
+                ctx.fillStyle = '#d4af37';
+                for (let i=0; i<5; i++) {
+                    ctx.fillRect(carrier.x+45 + i*10, carrier.y-4, 4, 8);
+                }
+
+                // carrier tower
+                ctx.fillStyle = '#4b3a2b';
+                ctx.beginPath();
+                ctx.roundRect(carrier.x+95, carrier.y-28, 24, 28, 6);
+                ctx.fill();
+                ctx.fillStyle = '#b0c4de';
+                ctx.beginPath();
+                ctx.arc(carrier.x+107, carrier.y-32, 8, 0, Math.PI*2);
+                ctx.fill();
+
+                // "LAND HERE" glow
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = '#ffd966aa';
+                ctx.font = 'bold 13px system-ui';
+                ctx.fillStyle = '#ffffffcc';
+                ctx.fillText('LAND HERE', carrier.x+15, carrier.y-18);
+                ctx.shadowBlur = 0;
+            }
+
+            function drawPlane() {
+                const px = plane.x;
+                const py = plane.y;
+                const angle = plane.angle;
+
+                ctx.save();
+                ctx.translate(px, py);
+        
