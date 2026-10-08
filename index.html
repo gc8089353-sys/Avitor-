@@ -1,320 +1,784 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Carrier Landing</title>
+<title>Aviator Carrier · Pay to Play</title>
 <style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   body {
-    margin: 0;
-    padding: 12px;
-    background: #0b1a2e;
+    background: #0a0e14;
     color: #fff;
-    font-family: Arial, sans-serif;
+    font-family: -apple-system, system-ui, 'Segoe UI', Roboto, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 0;
+    overflow-x: hidden;
   }
-  h1 { font-size: 20px; margin: 0 0 10px 0; }
-  .wallet { font-size: 18px; margin-bottom: 10px; }
-  .wallet b { color: #ffcd6b; }
-  canvas {
+  .app {
     width: 100%;
-    height: auto;
-    background: #1c3f5c;
-    border: 2px solid #294b63;
-    border-radius: 12px;
+    max-width: 480px;
+    min-height: 100vh;
+    background: #0d1117;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  /* ===== TOP BAR ===== */
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 16px;
+    background: #0d1117;
+    border-bottom: 1px solid #1c2430;
+  }
+  .topbar .back {
+    font-size: 20px;
+    color: #fff;
+    opacity: 0.8;
+  }
+  .topbar .balance {
+    color: #7cf59a;
+    font-weight: 700;
+    font-size: 15px;
+  }
+  .topbar .icons {
+    display: flex;
+    gap: 16px;
+    font-size: 18px;
+    opacity: 0.8;
+  }
+
+  /* ===== LIVE BANNER ===== */
+  .live-banner {
+    margin: 8px 12px;
+    background: linear-gradient(90deg, #1a1f2b, #222a3a);
+    border-radius: 30px;
+    padding: 10px 6px 10px 6px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border: 1px solid #2a3444;
+    position: relative;
+  }
+  .live-pill {
+    background: #0d1117;
+    border: 2px solid #ff4d4d;
+    color: #ff4d4d;
+    font-weight: 800;
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    letter-spacing: 0.5px;
+  }
+  .live-dot {
+    width: 7px; height: 7px;
+    background: #ff4d4d;
+    border-radius: 50%;
+    animation: pulse 1.2s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+  .live-text {
+    flex: 1;
+    font-size: 12px;
+    color: #e0e6f0;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .live-arrow {
+    background: #ffcc00;
+    color: #000;
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    font-size: 16px;
+    flex-shrink: 0;
+    margin-right: 2px;
+  }
+
+  /* ===== MULTIPLIER ROW ===== */
+  .mult-row {
+    display: flex;
+    gap: 8px;
+    padding: 4px 12px 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .mult-row::-webkit-scrollbar { display: none; }
+  .mult-chip {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 20px;
+    background: #141a24;
+    color: #4a90d9;
+    border: 1px solid #1e2836;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .mult-chip.red { color: #ff5566; }
+  .mult-chip.blue { color: #4a90d9; }
+  .mult-chip.dim { color: #5a6678; }
+
+  /* ===== GAME ARENA (the star) ===== */
+  .arena {
+    position: relative;
+    margin: 4px 12px 12px;
+    border-radius: 20px;
+    overflow: hidden;
+    background: radial-gradient(circle at 50% 50%, #0f2137 0%, #0a0e14 80%);
+    height: 320px;
+    border: 1px solid #1c2430;
+    box-shadow: inset 0 0 60px rgba(0, 80, 160, 0.15);
+  }
+  /* sunburst rays */
+  .rays {
+    position: absolute;
+    inset: 0;
+    background: repeating-conic-gradient(
+      from 0deg at 50% 50%,
+      rgba(30, 60, 100, 0.25) 0deg 6deg,
+      transparent 6deg 12deg
+    );
+    animation: rotate 40s linear infinite;
+    opacity: 0.6;
+  }
+  @keyframes rotate {
+    to { transform: rotate(360deg); }
+  }
+  .arena canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
     display: block;
     touch-action: manipulation;
   }
-  .info {
-    margin: 10px 0;
-    font-size: 14px;
-    display: flex;
-    justify-content: space-between;
-  }
-  button {
-    width: 100%;
-    padding: 18px;
-    margin: 6px 0;
-    font-size: 18px;
-    font-weight: bold;
-    border: none;
-    border-radius: 12px;
+  .mult-display {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 72px;
+    font-weight: 900;
     color: #fff;
-    background: #294a63;
+    text-shadow: 0 0 30px rgba(80, 180, 255, 0.8), 0 0 60px rgba(80, 180, 255, 0.4);
+    z-index: 5;
+    pointer-events: none;
+    letter-spacing: -2px;
+    transition: color 0.2s;
+  }
+  .mult-display.crashed {
+    color: #ff4d4d;
+    text-shadow: 0 0 30px rgba(255, 60, 60, 0.9);
+  }
+  .arena-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    gap: 10px;
+    backdrop-filter: blur(2px);
+    text-align: center;
+    padding: 20px;
+  }
+  .arena-overlay h2 {
+    font-size: 22px;
+    font-weight: 800;
+    color: #fff;
+  }
+  .arena-overlay p {
+    font-size: 13px;
+    color: #9aa8bd;
+    line-height: 1.5;
+  }
+  .hidden { display: none !important; }
+
+  /* ===== CONTROLS (bet panel style) ===== */
+  .panel {
+    margin: 0 12px 10px;
+    background: #131822;
+    border-radius: 18px;
+    padding: 12px;
+    border: 1px solid #1c2430;
+  }
+  .tabs {
+    display: flex;
+    background: #0d1117;
+    border-radius: 30px;
+    padding: 4px;
+    margin-bottom: 12px;
+  }
+  .tab {
+    flex: 1;
+    text-align: center;
+    padding: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #6b7789;
+    border-radius: 26px;
+    transition: 0.15s;
+  }
+  .tab.active {
+    background: #222a3a;
+    color: #fff;
+  }
+  .control-row {
+    display: flex;
+    gap: 10px;
+    align-items: stretch;
+  }
+  .amount-box {
+    flex: 1;
+    background: #0d1117;
+    border-radius: 14px;
+    padding: 8px 4px 10px;
+    border: 1px solid #1c2430;
+  }
+  .amount-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 8px;
+  }
+  .amount-top button {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: #1c2430;
+    color: #fff;
+    border: none;
+    font-size: 20px;
+    font-weight: 700;
+    cursor: pointer;
+    line-height: 1;
+  }
+  .amount-top button:active { background: #2a3444; }
+  .amount-value {
+    font-size: 20px;
+    font-weight: 800;
+    color: #fff;
+  }
+  .quick-btns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-top: 8px;
+    padding: 0 8px;
+  }
+  .quick-btns button {
+    background: #1a212c;
+    border: none;
+    color: #a8b4c8;
+    padding: 8px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 700;
     cursor: pointer;
   }
-  #payBtn { background: #c99b3b; color: #1d160a; }
-  #playBtn { background: #2e7d32; }
-  #resetBtn { background: #4a5568; }
-  button:disabled { opacity: 0.4; }
-  #errorBox {
-    background: #4a0f0f;
-    color: #ffb3b3;
-    padding: 10px;
-    border-radius: 8px;
-    margin: 10px 0;
-    font-size: 13px;
-    white-space: pre-wrap;
-    display: none;
+  .quick-btns button:active { background: #2a3444; }
+
+  .action-btn {
+    flex: 1.3;
+    border: none;
+    border-radius: 14px;
+    font-size: 16px;
+    font-weight: 800;
+    color: #fff;
+    cursor: pointer;
+    padding: 14px;
+    line-height: 1.3;
+    transition: 0.1s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
   }
-  #logBox {
-    background: #000;
-    color: #0f0;
-    padding: 8px;
-    border-radius: 8px;
-    margin: 10px 0;
+  .action-btn:active { transform: scale(0.97); }
+  .action-btn.play {
+    background: linear-gradient(180deg, #2eb84f, #1f8a3a);
+    box-shadow: 0 4px 0 #14632a;
+  }
+  .action-btn.cash {
+    background: linear-gradient(180deg, #ffb300, #d68a00);
+    box-shadow: 0 4px 0 #8a5800;
+    color: #1a1000;
+  }
+  .action-btn:disabled {
+    background: #2a3444;
+    box-shadow: 0 4px 0 #1a212c;
+    color: #6b7789;
+    cursor: not-allowed;
+  }
+  .action-btn small {
+    font-size: 11px;
+    font-weight: 600;
+    opacity: 0.85;
+  }
+
+  /* ===== INFO STRIP ===== */
+  .info-strip {
+    display: flex;
+    justify-content: space-around;
+    background: #131822;
+    margin: 0 12px 12px;
+    border-radius: 14px;
+    padding: 10px;
+    border: 1px solid #1c2430;
     font-size: 12px;
-    font-family: monospace;
-    max-height: 120px;
-    overflow-y: auto;
+  }
+  .info-strip div { text-align: center; color: #8a96a8; }
+  .info-strip b { display: block; font-size: 16px; color: #fff; margin-top: 2px; }
+
+  .bottom-tabs {
+    display: flex;
+    background: #131822;
+    border-radius: 30px;
+    padding: 4px;
+    margin: 0 12px 12px;
+    border: 1px solid #1c2430;
+  }
+  .bottom-tabs .tab {
+    flex: 1;
+    text-align: center;
+    padding: 10px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #6b7789;
+    border-radius: 26px;
+  }
+  .bottom-tabs .tab.active {
+    background: #222a3a;
+    color: #fff;
+  }
+
+  .hint {
+    text-align: center;
+    font-size: 11px;
+    color: #5a6678;
+    padding: 0 12px 20px;
   }
 </style>
 </head>
 <body>
+<div class="app">
 
-<h1>🛩️ CARRIER LANDING</h1>
-<div class="wallet">⛁ Credits: <b id="credits">100</b></div>
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="back">←</div>
+    <div class="balance">KSH <span id="balanceDisplay">100</span></div>
+    <div class="icons">💬 ⚙</div>
+  </div>
 
-<canvas id="cv" width="720" height="360"></canvas>
+  <!-- Live banner -->
+  <div class="live-banner">
+    <div class="live-pill"><span class="live-dot"></span> LIVE</div>
+    <div class="live-text">Carrier Landing · Pay 20¢ to fly</div>
+    <div class="live-arrow">→</div>
+  </div>
 
-<div class="info">
-  <div id="msg">Loading...</div>
-  <div>🛬 <b id="landings">0</b> &nbsp; 💥 <b id="crashes">0</b></div>
+  <!-- Recent multipliers -->
+  <div class="mult-row">
+    <div class="mult-chip red">11.20x</div>
+    <div class="mult-chip blue">1.26x</div>
+    <div class="mult-chip blue">1.10x</div>
+    <div class="mult-chip red">6.29x</div>
+    <div class="mult-chip blue">1.05x</div>
+    <div class="mult-chip red">4.35x</div>
+    <div class="mult-chip blue">2.54x</div>
+    <div class="mult-chip red">3.79x</div>
+    <div class="mult-chip blue">5.01x</div>
+  </div>
+
+  <!-- ===== GAME ARENA ===== -->
+  <div class="arena">
+    <div class="rays"></div>
+    <canvas id="cv" width="480" height="320"></canvas>
+    <div class="mult-display" id="multDisplay">1.00x</div>
+    <div class="arena-overlay" id="overlay">
+      <h2>✈️ READY FOR TAKEOFF</h2>
+      <p>Pay 20¢ to launch · Tap screen to lift the plane<br>Land gently on the carrier to win</p>
+    </div>
+  </div>
+
+  <!-- ===== BET / PLAY PANEL ===== -->
+  <div class="panel">
+    <div class="tabs">
+      <div class="tab active">Bet</div>
+      <div class="tab">Auto</div>
+    </div>
+
+    <div class="control-row">
+      <!-- Amount box -->
+      <div class="amount-box">
+        <div class="amount-top">
+          <button id="decBtn">−</button>
+          <div class="amount-value" id="betAmount">20</div>
+          <button id="incBtn">+</button>
+        </div>
+        <div class="quick-btns">
+          <button data-amt="20">20¢</button>
+          <button data-amt="50">50¢</button>
+          <button data-amt="100">100¢</button>
+          <button data-amt="200">200¢</button>
+        </div>
+      </div>
+
+      <!-- Main action -->
+      <button class="action-btn play" id="mainBtn">
+        <span id="mainBtnLabel">PLAY</span>
+        <small id="mainBtnSub">20¢ per flight</small>
+      </button>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="info-strip">
+    <div>Landings<b id="statLandings">0</b></div>
+    <div>Crashes<b id="statCrashes">0</b></div>
+    <div>Best<b id="statBest">0x</b></div>
+  </div>
+
+  <!-- Bottom tabs -->
+  <div class="bottom-tabs">
+    <div class="tab active">All Bets</div>
+    <div class="tab">Previous</div>
+    <div class="tab">Top</div>
+  </div>
+
+  <div class="hint">💡 Tap PLAY to launch · Tap the arena to lift · Land gently for a big multiplier</div>
+
 </div>
 
-<button id="payBtn">💰 PAY 20¢</button>
-<button id="playBtn">▶ PLAY (20¢)</button>
-<button id="resetBtn">🔄 RESET</button>
-
-<div id="errorBox"></div>
-<div id="logBox">Log:</div>
-
 <script>
-// Error catcher
-window.onerror = function(m, s, l, c, e) {
-  var box = document.getElementById('errorBox');
-  box.style.display = 'block';
-  box.textContent = 'ERROR: ' + m + '\nLine: ' + l;
-  return false;
-};
+(function(){
+  // ===== SAFE SETUP =====
+  var cv = document.getElementById('cv');
+  var ctx = cv.getContext('2d');
+  var W = 480, H = 320;
 
-function log(t) {
-  var b = document.getElementById('logBox');
-  b.textContent += '\n' + t;
-}
+  var balanceEl = document.getElementById('balanceDisplay');
+  var betAmountEl = document.getElementById('betAmount');
+  var mainBtn = document.getElementById('mainBtn');
+  var mainBtnLabel = document.getElementById('mainBtnLabel');
+  var mainBtnSub = document.getElementById('mainBtnSub');
+  var multDisplay = document.getElementById('multDisplay');
+  var overlay = document.getElementById('overlay');
+  var statLandings = document.getElementById('statLandings');
+  var statCrashes = document.getElementById('statCrashes');
+  var statBest = document.getElementById('statBest');
 
-try {
-  log('Script starting...');
+  var decBtn = document.getElementById('decBtn');
+  var incBtn = document.getElementById('incBtn');
+  var quickBtns = document.querySelectorAll('.quick-btns button');
 
-  var canvas = document.getElementById('cv');
-  var ctx = canvas.getContext('2d');
-  var W = 720, H = 360;
-
-  log('Canvas found: ' + (canvas ? 'yes' : 'no'));
-  log('Context: ' + (ctx ? 'yes' : 'no'));
-
-  // ---- STATE ----
-  var credits = 100;
+  // ===== STATE =====
+  var balance = 100;       // starting credits
+  var bet = 20;            // current bet
   var landings = 0;
   var crashes = 0;
-  var flying = false;
+  var bestMult = 0;
 
-  var plane = { x: 100, y: 150, vy: 0, angle: 0 };
-  var carrier = { x: 540, y: 290, w: 120, h: 16 };
-  var GRAVITY = 0.13;
-  var LIFT = -1.2;
-  var SPEED_X = 2.0;
-  var MIN_VY = -3.0;
-  var MAX_VY = 2.5;
+  var flying = false;      // plane is in the air
+  var crashed = false;
 
-  var creditsEl = document.getElementById('credits');
-  var landingsEl = document.getElementById('landings');
-  var crashesEl = document.getElementById('crashes');
-  var msgEl = document.getElementById('msg');
-  var payBtn = document.getElementById('payBtn');
-  var playBtn = document.getElementById('playBtn');
-  var resetBtn = document.getElementById('resetBtn');
+  // Plane physics
+  var plane = { x: 60, y: 260, vy: 0, angle: 0 };
+  var carrier = { x: 330, y: 250, w: 110, h: 14 };
+  var GRAVITY = 0.16;
+  var LIFT = -1.6;
+  var SPEED_X = 1.8;
 
-  log('DOM elements grabbed');
+  // Multiplier (visual, based on altitude gained)
+  var startY = 260;
+  var multiplier = 1.00;
 
-  function refreshUI() {
-    creditsEl.textContent = credits;
-    landingsEl.textContent = landings;
-    crashesEl.textContent = crashes;
-    playBtn.disabled = !(credits >= 20 && !flying);
+  // Trail points for the flight path
+  var trail = [];
+
+  // ===== UI =====
+  function updateUI() {
+    balanceEl.textContent = balance;
+    statLandings.textContent = landings;
+    statCrashes.textContent = crashes;
+    statBest.textContent = bestMult.toFixed(2) + 'x';
+    betAmountEl.textContent = bet;
+
+    if (flying) {
+      mainBtnLabel.textContent = 'CASH OUT';
+      mainBtnSub.textContent = multiplier.toFixed(2) + 'x';
+      mainBtn.classList.remove('play');
+      mainBtn.classList.add('cash');
+      mainBtn.disabled = false;
+    } else {
+      mainBtnLabel.textContent = 'PLAY';
+      mainBtnSub.textContent = bet + '¢ per flight';
+      mainBtn.classList.remove('cash');
+      mainBtn.classList.add('play');
+      mainBtn.disabled = balance < bet;
+    }
   }
 
-  function setMsg(t) { msgEl.textContent = t; log('MSG: ' + t); }
-
-  function resetPlane() {
-    plane.x = 100; plane.y = 150; plane.vy = 0; plane.angle = 0;
+  function showOverlay(title, sub) {
+    overlay.classList.remove('hidden');
+    overlay.querySelector('h2').textContent = title;
+    overlay.querySelector('p').innerHTML = sub;
+  }
+  function hideOverlay() {
+    overlay.classList.add('hidden');
   }
 
+  // ===== GAME FLOW =====
   function startGame() {
-    log('startGame called. flying=' + flying + ' credits=' + credits);
     if (flying) return;
-    if (credits < 20) { setMsg('Not enough credits'); return; }
-    credits = credits - 20;
-    resetPlane();
+    if (balance < bet) return;
+
+    balance -= bet;
     flying = true;
-    setMsg('FLYING — tap canvas to lift!');
-    refreshUI();
+    crashed = false;
+    multiplier = 1.00;
+    multDisplay.textContent = '1.00x';
+    multDisplay.classList.remove('crashed');
+    hideOverlay();
+
+    // Reset plane
+    plane.x = 60;
+    plane.y = 260;
+    plane.vy = -2.2;    // initial upward boost
+    plane.angle = -0.3;
+    startY = 260;
+    trail = [];
+
+    updateUI();
   }
 
-  function crash(reason) {
+  function cashOut() {
+    if (!flying || crashed) return;
+    // Win: cash out at current multiplier
+    var winnings = Math.round(bet * multiplier);
+    balance += winnings;
+    flying = false;
+    if (multiplier > bestMult) bestMult = multiplier;
+    landings++;
+
+    multDisplay.textContent = multiplier.toFixed(2) + 'x';
+    showOverlay('💰 CASHED OUT!', 'You won ' + winnings + '¢ at ' + multiplier.toFixed(2) + 'x');
+    updateUI();
+  }
+
+  function crashPlane() {
     if (!flying) return;
     flying = false;
-    crashes = crashes + 1;
-    setMsg('CRASH: ' + reason);
-    refreshUI();
+    crashed = true;
+    crashes++;
+    multDisplay.classList.add('crashed');
+    multDisplay.textContent = multiplier.toFixed(2) + 'x';
+    showOverlay('💥 CRASHED!', 'You lost ' + bet + '¢ · tap PLAY to retry');
+    updateUI();
   }
 
-  function landed() {
+  function landPlane() {
     if (!flying) return;
     flying = false;
-    landings = landings + 1;
-    setMsg('LANDED! +1');
-    plane.y = carrier.y - 12;
-    plane.vy = 0;
-    plane.angle = 0;
-    refreshUI();
+    if (multiplier > bestMult) bestMult = multiplier;
+    landings++;
+    var winnings = Math.round(bet * multiplier);
+    balance += winnings;
+    multDisplay.textContent = multiplier.toFixed(2) + 'x';
+    showOverlay('✅ LANDED!', 'Safe landing at ' + multiplier.toFixed(2) + 'x · +' + winnings + '¢');
+    updateUI();
   }
 
-  function checkLanding() {
-    if (!flying) return;
-    if (plane.x < 5) { crash('off left'); return; }
-    if (plane.x > W - 5) { crash('off right'); return; }
-
-    var onDeckX = (plane.x >= carrier.x && plane.x <= carrier.x + carrier.w);
-    var nearDeckY = (plane.y >= carrier.y - 12 && plane.y <= carrier.y + 10);
-
-    if (onDeckX && nearDeckY) {
-      if (plane.vy >= MIN_VY && plane.vy <= MAX_VY) landed();
-      else crash(plane.vy < MIN_VY ? 'too steep' : 'too fast');
-      return;
-    }
-
-    if (plane.y >= 320) {
-      if (onDeckX && plane.vy >= MIN_VY && plane.vy <= MAX_VY) landed();
-      else if (onDeckX) crash('hard landing');
-      else crash('splashdown');
-    }
-  }
-
+  // ===== PHYSICS =====
   function update() {
     if (!flying) return;
+
+    // gravity
     plane.vy += GRAVITY;
-    if (plane.vy > 5) plane.vy = 5;
-    if (plane.vy < -5) plane.vy = -5;
+    if (plane.vy > 4) plane.vy = 4;
+    if (plane.vy < -4) plane.vy = -4;
     plane.y += plane.vy;
-    plane.angle = plane.vy * 0.08;
-    if (plane.angle > 0.3) plane.angle = 0.3;
-    if (plane.angle < -0.3) plane.angle = -0.3;
     plane.x += SPEED_X;
-    checkLanding();
-  }
+    plane.angle = plane.vy * 0.08;
+    if (plane.angle > 0.4) plane.angle = 0.4;
+    if (plane.angle < -0.4) plane.angle = -0.4;
 
-  function draw() {
-    // sky
-    ctx.fillStyle = '#2b5b7a';
-    ctx.fillRect(0, 0, W, 320);
-    // sea
-    ctx.fillStyle = '#123a52';
-    ctx.fillRect(0, 320, W, 40);
-    // carrier
-    ctx.fillStyle = '#3a4e5e';
-    ctx.fillRect(carrier.x, carrier.y, carrier.w, carrier.h);
-    ctx.fillStyle = '#f0e68c';
-    ctx.fillRect(carrier.x + 8, carrier.y - 2, 22, 4);
-    ctx.fillRect(carrier.x + 85, carrier.y - 2, 22, 4);
-    ctx.fillStyle = '#4b3a2b';
-    ctx.fillRect(carrier.x + 88, carrier.y - 24, 20, 24);
-    // plane
-    ctx.save();
-    ctx.translate(plane.x, plane.y);
-    ctx.rotate(plane.angle);
-    ctx.fillStyle = '#d9e9ff';
-    ctx.beginPath();
-    ctx.moveTo(18, 0);
-    ctx.lineTo(-12, -8);
-    ctx.lineTo(-8, 0);
-    ctx.lineTo(-12, 8);
-    ctx.closePath();
-    ctx.fill();
-    ctx.fillStyle = '#90a8c0';
-    ctx.fillRect(-8, -10, 16, 4);
-    ctx.fillRect(-8, 6, 16, 4);
-    ctx.restore();
+    // record trail
+    trail.push({ x: plane.x, y: plane.y });
+    if (trail.length > 60) trail.shift();
 
-    // overlay when not flying
-    if (!flying) {
-      ctx.fillStyle = 'rgba(0,0,0,0.5)';
-      ctx.fillRect(0, 0, W, H);
-      ctx.fillStyle = '#fff';
-      ctx.font = 'bold 22px Arial';
-      ctx.textAlign = 'center';
-      ctx.fillText('PAY 20¢ TO FLY', W/2, H/2);
-      ctx.textAlign = 'start';
+    // multiplier = based on how much altitude gained (higher = bigger)
+    var altitudeGain = startY - plane.y;
+    multiplier = 1 + Math.max(0, altitudeGain) / 55;
+    if (multiplier < 1) multiplier = 1;
+    multDisplay.textContent = multiplier.toFixed(2) + 'x';
+
+    // update cash-out sub-label live
+    if (flying) {
+      mainBtnSub.textContent = multiplier.toFixed(2) + 'x';
+    }
+
+    // ===== COLLISION / BOUNDS =====
+
+    // off right (flew past carrier) → crash
+    if (plane.x > W + 20) { crashPlane(); return; }
+
+    // off top (too high) → still fine, just multiplier grows
+    // off bottom (hit sea)
+    if (plane.y > 300) {
+      // check if over carrier deck
+      var onDeck = (plane.x >= carrier.x && plane.x <= carrier.x + carrier.w);
+      if (onDeck && plane.vy >= -1.5 && plane.vy <= 3) {
+        // gentle landing on deck
+        plane.y = carrier.y - 8;
+        landPlane();
+        return;
+      } else if (onDeck) {
+        // hard landing
+        plane.y = carrier.y - 8;
+        crashPlane();
+        return;
+      } else {
+        // hit the sea
+        crashPlane();
+        return;
+      }
+    }
+
+    // check carrier deck landing (when plane is at deck height)
+    var overDeck = (plane.x >= carrier.x && plane.x <= carrier.x + carrier.w);
+    var atDeckY = (plane.y >= carrier.y - 10 && plane.y <= carrier.y + 8);
+    if (overDeck && atDeckY && plane.vy > -1.5 && plane.vy < 3) {
+      plane.y = carrier.y - 8;
+      landPlane();
     }
   }
 
-  function loop() {
-    update();
-    draw();
-    requestAnimationFrame(loop);
-  }
+  // ===== DRAW =====
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
 
-  // ---- CONTROLS ----
-  function lift(e) {
-    if (e) e.preventDefault();
-    if (!flying) return;
-    plane.vy += LIFT;
-    if (plane.vy < -4.5) plane.vy = -4.5;
-  }
+    // Stars / particles in background
+    ctx.fillStyle = 'rgba(80, 140, 220, 0.15)';
+    for (var i = 0; i < 40; i++) {
+      var sx = (i * 97) % W;
+      var sy = (i * 53) % H;
+      ctx.fillRect(sx, sy, 2, 2);
+    }
 
-  window.addEventListener('keydown', function(e) {
-    if (e.key === ' ' || e.code === 'Space') { e.preventDefault(); lift(); }
-  });
-  canvas.addEventListener('mousedown', lift);
-  canvas.addEventListener('touchstart', lift, { passive: false });
+    // Sea at bottom
+    var seaGrad = ctx.createLinearGradient(0, H - 40, 0, H);
+    seaGrad.addColorStop(0, '#0d2a44');
+    seaGrad.addColorStop(1, '#061420');
+    ctx.fillStyle = seaGrad;
+    ctx.fillRect(0, H - 40, W, 40);
 
-  // ---- BUTTONS (using onclick for maximum compatibility) ----
-  payBtn.onclick = function() {
-    log('PAY clicked');
-    credits += 20;
-    setMsg('+20 credits');
-    refreshUI();
-  };
+    // sea waves
+    ctx.strokeStyle = 'rgba(80, 160, 220, 0.3)';
+    ctx.lineWidth = 1.5;
+    var t = Date.now() * 0.002;
+    for (var w = 0; w < 8; w++) {
+      var wx = (w * 70 + t * 15) % (W + 40) - 20;
+      ctx.beginPath();
+      ctx.moveTo(wx, H - 25);
+      ctx.lineTo(wx + 30, H - 28);
+      ctx.stroke();
+    }
 
-  playBtn.onclick = function() {
-    log('PLAY clicked');
-    startGame();
-  };
+    // Carrier deck
+    ctx.fillStyle = '#2a3a4a';
+    ctx.fillRect(carrier.x, carrier.y, carrier.w, carrier.h);
+    ctx.fillStyle = '#4a5a6a';
+    ctx.fillRect(carrier.x, carrier.y, carrier.w, 2);
+    // deck markings
+    ctx.fillStyle = '#ffcc00';
+    ctx.fillRect(carrier.x + 8, carrier.y - 2, 20, 4);
+    ctx.fillRect(carrier.x + carrier.w - 28, carrier.y - 2, 20, 4);
+    // tower
+    ctx.fillStyle = '#1a2430';
+    ctx.fillRect(carrier.x + carrier.w - 30, carrier.y - 22, 20, 22);
+    ctx.fillStyle = '#4a90d9';
+    ctx.beginPath();
+    ctx.arc(carrier.x + carrier.w - 20, carrier.y - 26, 6, 0, Math.PI * 2);
+    ctx.fill();
 
-  resetBtn.onclick = function() {
-    log('RESET clicked');
-    flying = false;
-    landings = 0;
-    crashes = 0;
-    resetPlane();
-    setMsg('Reset done');
-    refreshUI();
-  };
+    // Landing zone glow
+    ctx.strokeStyle = 'rgba(124, 245, 154, 0.5)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([6, 6]);
+    ctx.beginPath();
+    ctx.moveTo(carrier.x + 8, carrier.y + 20);
+    ctx.lineTo(carrier.x + carrier.w - 8, carrier.y + 20);
+    ctx.stroke();
+    ctx.setLineDash([]);
 
-  // ---- START ----
-  log('Buttons wired up');
-  resetPlane();
-  refreshUI();
-  setMsg('Ready — tap PAY');
-  loop();
+    // Trail
+    if (trail.length > 1) {
+      ctx.strokeStyle = crashed ? 'rgba(255, 80, 80, 0.6)' : 'rgba(80, 180, 255, 0.6)';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(trail[0].x, trail[0].y);
+      for (var k = 1; k < trail.length; k++) {
+        ctx.lineTo(trail[k].x, trail[k].y);
+      }
+      ctx.stroke();
+    }
 
-  log('Script loaded successfully');
+    // Plane (glowing red Aviator style)
+    if (flying || crashed || landings > 0) {
+      ctx.save();
+      ctx.translate(plane.x, plane.y);
+      ctx.rotate(plane.angle);
 
-} catch(err) {
-  var box = document.getElementById('errorBox');
-  box.style.display = 'block';
-  box.textContent = 'CAUGHT ERROR: ' + err.message + '\n' + err.stack;
-}
-</script>
+      // glow
+      ctx.shadowColor = crashed ? '#ff3030' : '#ff4060';
+      ctx.shadowBlur = 20;
 
-</body>
-</html>
+      // Plane body (red, Aviator-style)
+      ctx.fillStyle = crashed ? '#ff3030' : '#ff2d55';
+      ctx.beginPath();
+      ctx.moveTo(16, 0);
+      ctx.lineTo(-10, -7);
+      ctx.lineTo(-6, 0);
+      ctx.lineTo(-10, 7);
+      ctx.closePath();
+      ctx.fill();
+
+      // wings
+      ctx.beginPath();
+      ctx.moveTo(-2, -2);
+      ctx.lineTo(-6, -12);
+      ctx.lineTo(4, -3);
+      ctx.closePath();
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(-2, 2);
+      ctx.lineTo(-6, 12);
+      ctx.lineTo(4, 3);
+      ctx.closePath();
+      ctx.fill();
+
+      // cockpit
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.arc(6, 0, 2.5, 0, Math.PI * 2);
+   
