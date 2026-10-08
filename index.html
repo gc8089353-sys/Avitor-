@@ -86,7 +86,6 @@
   .mult-chip.red { color: #ff5566; }
   .mult-chip.blue { color: #4a90d9; }
 
-  /* ===== ARENA ===== */
   .arena {
     position: relative;
     margin: 4px 12px 12px;
@@ -115,7 +114,7 @@
   }
   .mult-display {
     position: absolute;
-    top: 50%; left: 50%;
+    top: 42%; left: 50%;
     transform: translate(-50%, -50%);
     font-size: 68px; font-weight: 900;
     color: #fff;
@@ -140,13 +139,12 @@
     gap: 10px;
     text-align: center;
     padding: 20px;
-    pointer-events: none; /* ← CRITICAL: never blocks taps */
+    pointer-events: none;
   }
   .arena-overlay h2 { font-size: 22px; font-weight: 800; }
   .arena-overlay p { font-size: 13px; color: #9aa8bd; line-height: 1.5; }
   .hidden { display: none !important; }
 
-  /* ===== PANEL ===== */
   .panel {
     margin: 0 12px 10px;
     background: #131822;
@@ -265,12 +263,12 @@
   </div>
 
   <div class="mult-row">
-    <div class="mult-chip red">11.20x</div>
+    <div class="mult-chip red">15.20x</div>
     <div class="mult-chip blue">1.26x</div>
     <div class="mult-chip blue">1.10x</div>
     <div class="mult-chip red">6.29x</div>
     <div class="mult-chip blue">1.05x</div>
-    <div class="mult-chip red">4.35x</div>
+    <div class="mult-chip red">12.35x</div>
     <div class="mult-chip blue">2.54x</div>
     <div class="mult-chip red">3.79x</div>
   </div>
@@ -333,7 +331,6 @@
 (function(){
   'use strict';
 
-  // ===== ELEMENTS =====
   var cv = document.getElementById('cv');
   var ctx = cv.getContext('2d');
   var W = 480, H = 320;
@@ -363,13 +360,22 @@
   var flying = false;
   var crashed = false;
 
-  var plane = { x: 60, y: 260, vy: 0, angle: 0 };
-  var carrier = { x: 330, y: 250, w: 110, h: 14 };
-  var GRAVITY = 0.16;
-  var LIFT = -1.6;
-  var SPEED_X = 1.8;
+  // ===== TUNED PHYSICS FOR LONG FLIGHTS =====
+  // Key changes:
+  // - Slower horizontal speed → more time on screen
+  // - Lower gravity → plane floats longer
+  // - Carrier moved further right → longer runway to land
+  // - Multiplier divisor reduced → grows faster (up to 15x+)
+  var plane = { x: 50, y: 270, vy: 0, angle: 0 };
+  var carrier = { x: 380, y: 260, w: 90, h: 14 };
+  var GRAVITY = 0.08;       // was 0.16 — gentler
+  var LIFT = -1.5;          // still strong enough to climb
+  var SPEED_X = 0.9;        // was 1.8 — half speed, longer flight
+  var MAX_UP_VY = -6.5;     // allow higher climb
+  var MAX_DOWN_VY = 3.5;    // softer terminal velocity
+  var MULTIPLIER_DIVISOR = 28; // was 55 — grows ~2x faster → hits 15x+ easier
 
-  var startY = 260;
+  var startY = 270;
   var multiplier = 1.00;
   var trail = [];
 
@@ -405,7 +411,7 @@
     overlay.classList.add('hidden');
   }
 
-  // ===== GAME =====
+  // ===== GAME FLOW =====
   function startGame() {
     if (flying) return;
     if (balance < bet) return;
@@ -417,11 +423,11 @@
     multDisplay.classList.remove('crashed');
     hideOverlay();
 
-    plane.x = 60;
-    plane.y = 260;
-    plane.vy = -2.2;
-    plane.angle = -0.3;
-    startY = 260;
+    plane.x = 50;
+    plane.y = 270;
+    plane.vy = -2.8;       // stronger initial boost
+    plane.angle = -0.35;
+    startY = 270;
     trail = [];
 
     updateUI();
@@ -446,7 +452,7 @@
     crashes++;
     multDisplay.classList.add('crashed');
     multDisplay.textContent = multiplier.toFixed(2) + 'x';
-    showOverlay('💥 CRASHED!', 'You lost ' + bet + '¢ · tap PLAY to retry');
+    showOverlay('💥 CRASHED!', 'Lost at ' + multiplier.toFixed(2) + 'x · tap PLAY to retry');
     updateUI();
   }
 
@@ -467,31 +473,36 @@
     if (!flying) return;
 
     plane.vy += GRAVITY;
-    if (plane.vy > 4) plane.vy = 4;
-    if (plane.vy < -4) plane.vy = -4;
+    if (plane.vy > MAX_DOWN_VY) plane.vy = MAX_DOWN_VY;
+    if (plane.vy < MAX_UP_VY) plane.vy = MAX_UP_VY;
     plane.y += plane.vy;
     plane.x += SPEED_X;
-    plane.angle = plane.vy * 0.08;
+    plane.angle = plane.vy * 0.06;
     if (plane.angle > 0.4) plane.angle = 0.4;
     if (plane.angle < -0.4) plane.angle = -0.4;
 
     trail.push({ x: plane.x, y: plane.y });
-    if (trail.length > 60) trail.shift();
+    if (trail.length > 80) trail.shift();
 
+    // Multiplier grows with altitude gained
     var altitudeGain = startY - plane.y;
-    multiplier = 1 + Math.max(0, altitudeGain) / 55;
+    multiplier = 1 + Math.max(0, altitudeGain) / MULTIPLIER_DIVISOR;
     if (multiplier < 1) multiplier = 1;
     multDisplay.textContent = multiplier.toFixed(2) + 'x';
     mainBtnSub.textContent = multiplier.toFixed(2) + 'x';
 
+    // ---- COLLISION / BOUNDS ----
+
+    // off right (flew past carrier) → crash
     if (plane.x > W + 20) { crashPlane(); return; }
 
+    // hit sea (below deck level)
     if (plane.y > 300) {
-      var onDeck = (plane.x >= carrier.x && plane.x <= carrier.x + carrier.w);
-      if (onDeck && plane.vy >= -1.5 && plane.vy <= 3) {
+      var onDeckSea = (plane.x >= carrier.x && plane.x <= carrier.x + carrier.w);
+      if (onDeckSea && plane.vy >= -2 && plane.vy <= 3) {
         plane.y = carrier.y - 8;
         landPlane();
-      } else if (onDeck) {
+      } else if (onDeckSea) {
         plane.y = carrier.y - 8;
         crashPlane();
       } else {
@@ -500,9 +511,10 @@
       return;
     }
 
+    // check landing on carrier deck
     var overDeck = (plane.x >= carrier.x && plane.x <= carrier.x + carrier.w);
     var atDeckY = (plane.y >= carrier.y - 10 && plane.y <= carrier.y + 8);
-    if (overDeck && atDeckY && plane.vy > -1.5 && plane.vy < 3) {
+    if (overDeck && atDeckY && plane.vy > -2 && plane.vy < 3) {
       plane.y = carrier.y - 8;
       landPlane();
     }
@@ -512,6 +524,7 @@
   function draw() {
     ctx.clearRect(0, 0, W, H);
 
+    // starfield
     ctx.fillStyle = 'rgba(80, 140, 220, 0.15)';
     for (var i = 0; i < 40; i++) {
       var sx = (i * 97) % W;
@@ -519,6 +532,7 @@
       ctx.fillRect(sx, sy, 2, 2);
     }
 
+    // sea
     var seaGrad = ctx.createLinearGradient(0, H - 40, 0, H);
     seaGrad.addColorStop(0, '#0d2a44');
     seaGrad.addColorStop(1, '#061420');
@@ -536,27 +550,28 @@
       ctx.stroke();
     }
 
-    // carrier
+    // carrier deck
     ctx.fillStyle = '#2a3a4a';
     ctx.fillRect(carrier.x, carrier.y, carrier.w, carrier.h);
     ctx.fillStyle = '#4a5a6a';
     ctx.fillRect(carrier.x, carrier.y, carrier.w, 2);
     ctx.fillStyle = '#ffcc00';
-    ctx.fillRect(carrier.x + 8, carrier.y - 2, 20, 4);
-    ctx.fillRect(carrier.x + carrier.w - 28, carrier.y - 2, 20, 4);
+    ctx.fillRect(carrier.x + 6, carrier.y - 2, 16, 4);
+    ctx.fillRect(carrier.x + carrier.w - 22, carrier.y - 2, 16, 4);
     ctx.fillStyle = '#1a2430';
-    ctx.fillRect(carrier.x + carrier.w - 30, carrier.y - 22, 20, 22);
+    ctx.fillRect(carrier.x + carrier.w - 26, carrier.y - 22, 18, 22);
     ctx.fillStyle = '#4a90d9';
     ctx.beginPath();
-    ctx.arc(carrier.x + carrier.w - 20, carrier.y - 26, 6, 0, Math.PI * 2);
+    ctx.arc(carrier.x + carrier.w - 17, carrier.y - 26, 6, 0, Math.PI * 2);
     ctx.fill();
 
+    // landing zone dashed glow
     ctx.strokeStyle = 'rgba(124, 245, 154, 0.5)';
     ctx.lineWidth = 2;
     ctx.setLineDash([6, 6]);
     ctx.beginPath();
-    ctx.moveTo(carrier.x + 8, carrier.y + 20);
-    ctx.lineTo(carrier.x + carrier.w - 8, carrier.y + 20);
+    ctx.moveTo(carrier.x + 6, carrier.y + 20);
+    ctx.lineTo(carrier.x + carrier.w - 6, carrier.y + 20);
     ctx.stroke();
     ctx.setLineDash([]);
 
@@ -604,6 +619,14 @@
     ctx.arc(6, 0, 2.5, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
+
+    // HUD speed / alt
+    if (flying) {
+      ctx.fillStyle = 'rgba(255,255,255,0.5)';
+      ctx.font = 'bold 11px monospace';
+      ctx.fillText('SPD ' + plane.vy.toFixed(2), 10, 18);
+      ctx.fillText('ALT ' + Math.max(0, 300 - Math.floor(plane.y)), 10, 32);
+    }
   }
 
   function loop() {
@@ -617,7 +640,7 @@
     if (e) e.preventDefault();
     if (!flying) return;
     plane.vy += LIFT;
-    if (plane.vy < -5) plane.vy = -5;
+    if (plane.vy < MAX_UP_VY) plane.vy = MAX_UP_VY;
   }
 
   cv.addEventListener('mousedown', lift);
@@ -653,16 +676,4 @@
         e.preventDefault();
         if (flying) return;
         bet = parseInt(btn.dataset.amt);
-        updateUI();
-      });
-    })(quickBtns[q]);
-  }
-
-  // ===== INIT =====
-  updateUI();
-  loop();
-
-})();
-</script>
-</body>
-</html>
+     
