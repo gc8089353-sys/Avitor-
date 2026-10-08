@@ -1,568 +1,320 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Carrier Landing · Pay to Play</title>
-    <style>
-        * {
-            box-sizing: border-box;
-            font-family: system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-        }
-        body {
-            margin: 0;
-            min-height: 100vh;
-            background: linear-gradient(145deg, #0b1a2e 0%, #1a2f42 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 16px;
-        }
-        .game-container {
-            max-width: 840px;
-            width: 100%;
-            background: rgba(18, 30, 41, 0.85);
-            backdrop-filter: blur(8px);
-            border-radius: 48px;
-            box-shadow: 0 25px 40px -10px rgba(0, 0, 0, 0.8), inset 0 1px 3px rgba(255, 255, 255, 0.08);
-            border: 1px solid #2d4b62;
-            padding: 28px 28px 36px;
-        }
-        .carrier-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 18px;
-            padding: 0 10px;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        .carrier-header h1 {
-            font-size: 1.6rem;
-            font-weight: 700;
-            letter-spacing: 2px;
-            margin: 0;
-            color: #eef6ff;
-            text-shadow: 0 2px 0 #0a121c, 0 0 18px #3d8ec0;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .carrier-header h1 span {
-            font-size: 1.9rem;
-        }
-        .wallet {
-            background: #0b141e;
-            border-radius: 100px;
-            padding: 8px 22px;
-            border: 1px solid #3e617b;
-            box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.6), 0 2px 0 #1e3346;
-            color: #b9e2ff;
-            font-weight: 600;
-            font-size: 1.2rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .wallet .coin {
-            color: #ffcd6b;
-            font-size: 1.5rem;
-        }
-        .canvas-wrapper {
-            position: relative;
-            border-radius: 28px;
-            overflow: hidden;
-            box-shadow: inset 0 0 30px #00000066, 0 12px 25px -5px black;
-            border: 2px solid #294b63;
-            background: #0e1a24;
-        }
-        canvas {
-            display: block;
-            width: 100%;
-            height: auto;
-            aspect-ratio: 800 / 400;
-            cursor: pointer;
-            background: radial-gradient(circle at 30% 30%, #2b4f6e, #0f1f2e);
-            touch-action: manipulation;
-        }
-        .status-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin: 18px 8px 6px;
-            color: #bad7f0;
-            font-weight: 500;
-            text-shadow: 0 1px 3px black;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-        .message-box {
-            background: #08121bcc;
-            padding: 10px 18px;
-            border-radius: 60px;
-            font-size: 0.95rem;
-            border: 1px solid #335e7a;
-            backdrop-filter: blur(4px);
-            letter-spacing: 0.3px;
-            color: #dcf0ff;
-            box-shadow: inset 0 2px 8px #00000055;
-        }
-        .score-box {
-            background: #08121bcc;
-            padding: 10px 18px;
-            border-radius: 60px;
-            font-size: 0.95rem;
-            border: 1px solid #335e7a;
-            backdrop-filter: blur(4px);
-            display: flex;
-            gap: 14px;
-        }
-        .score-box span {
-            color: #ffd966;
-            font-weight: 700;
-        }
-        .controls {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 14px;
-            justify-content: center;
-            margin-top: 24px;
-        }
-        button {
-            background: linear-gradient(180deg, #294a63 0%, #0d1f2c 100%);
-            border: none;
-            border-radius: 60px;
-            padding: 16px 32px;
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: #ffffff;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            box-shadow: 0 10px 0 #0b131c, 0 8px 25px #000000aa, inset 0 1px 4px #99c9ff88;
-            cursor: pointer;
-            transition: 0.08s linear;
-            border: 1px solid #3b6d8f;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            touch-action: manipulation;
-            -webkit-tap-highlight-color: transparent;
-        }
-        button:active {
-            transform: translateY(5px);
-            box-shadow: 0 5px 0 #0b131c, 0 8px 25px #000000aa;
-        }
-        button:disabled {
-            opacity: 0.55;
-            transform: translateY(5px);
-            box-shadow: 0 5px 0 #0b131c, 0 8px 25px #000000aa;
-            pointer-events: none;
-            filter: grayscale(0.4);
-        }
-        .pay-btn {
-            background: linear-gradient(180deg, #c99b3b 0%, #7a561b 100%);
-            box-shadow: 0 10px 0 #4d3610, 0 8px 25px #000000aa, inset 0 1px 4px #ffe28b;
-            border-color: #e7b85c;
-            color: #1d160a;
-            text-shadow: 0 1px 0 #ffde9e;
-        }
-        .pay-btn:active {
-            box-shadow: 0 5px 0 #4d3610, 0 8px 25px #000000aa;
-        }
-        .reset-btn {
-            background: linear-gradient(180deg, #3a4e5e 0%, #1b2a36 100%);
-            box-shadow: 0 10px 0 #0d161f, 0 8px 25px #000000aa;
-            border-color: #5f829b;
-            padding: 16px 24px;
-            font-size: 1rem;
-        }
-        .payment-hint {
-            text-align: center;
-            font-size: 0.9rem;
-            color: #9ab9d0;
-            margin-top: 14px;
-            letter-spacing: 0.5px;
-            background: #07101880;
-            padding: 6px 12px;
-            border-radius: 60px;
-            display: inline-block;
-            backdrop-filter: blur(3px);
-        }
-        .flex-center {
-            display: flex;
-            justify-content: center;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Carrier Landing</title>
+<style>
+  body {
+    margin: 0;
+    padding: 12px;
+    background: #0b1a2e;
+    color: #fff;
+    font-family: Arial, sans-serif;
+  }
+  h1 { font-size: 20px; margin: 0 0 10px 0; }
+  .wallet { font-size: 18px; margin-bottom: 10px; }
+  .wallet b { color: #ffcd6b; }
+  canvas {
+    width: 100%;
+    height: auto;
+    background: #1c3f5c;
+    border: 2px solid #294b63;
+    border-radius: 12px;
+    display: block;
+    touch-action: manipulation;
+  }
+  .info {
+    margin: 10px 0;
+    font-size: 14px;
+    display: flex;
+    justify-content: space-between;
+  }
+  button {
+    width: 100%;
+    padding: 18px;
+    margin: 6px 0;
+    font-size: 18px;
+    font-weight: bold;
+    border: none;
+    border-radius: 12px;
+    color: #fff;
+    background: #294a63;
+    cursor: pointer;
+  }
+  #payBtn { background: #c99b3b; color: #1d160a; }
+  #playBtn { background: #2e7d32; }
+  #resetBtn { background: #4a5568; }
+  button:disabled { opacity: 0.4; }
+  #errorBox {
+    background: #4a0f0f;
+    color: #ffb3b3;
+    padding: 10px;
+    border-radius: 8px;
+    margin: 10px 0;
+    font-size: 13px;
+    white-space: pre-wrap;
+    display: none;
+  }
+  #logBox {
+    background: #000;
+    color: #0f0;
+    padding: 8px;
+    border-radius: 8px;
+    margin: 10px 0;
+    font-size: 12px;
+    font-family: monospace;
+    max-height: 120px;
+    overflow-y: auto;
+  }
+</style>
 </head>
 <body>
-    <div class="game-container">
-        <div class="carrier-header">
-            <h1>
-                <span>🛩️</span> CARRIER LANDING
-            </h1>
-            <div class="wallet">
-                <span class="coin">⛁</span> <span id="creditDisplay">100</span>
-            </div>
-        </div>
 
-        <div class="canvas-wrapper">
-            <canvas id="gameCanvas" width="800" height="400"></canvas>
-        </div>
+<h1>🛩️ CARRIER LANDING</h1>
+<div class="wallet">⛁ Credits: <b id="credits">100</b></div>
 
-        <div class="status-bar">
-            <div class="message-box" id="statusMessage">⏸️ Insert coin · pay to play</div>
-            <div class="score-box">
-                <div>🛬 <span id="scoreDisplay">0</span></div>
-                <div>💥 <span id="crashDisplay">0</span></div>
-            </div>
-        </div>
+<canvas id="cv" width="720" height="360"></canvas>
 
-        <div class="controls">
-            <button class="pay-btn" id="payButton">💰 PAY 20¢</button>
-            <button id="playButton" disabled>▶ PLAY (20¢)</button>
-            <button class="reset-btn" id="resetButton">🔄 RESET</button>
-        </div>
-        <div class="flex-center">
-            <div class="payment-hint">💡 Tap "PAY 20¢" → then press PLAY · Tap screen to lift</div>
-        </div>
-    </div>
+<div class="info">
+  <div id="msg">Loading...</div>
+  <div>🛬 <b id="landings">0</b> &nbsp; 💥 <b id="crashes">0</b></div>
+</div>
 
-    <script>
-        (function(){
-            const canvas = document.getElementById('gameCanvas');
-            const ctx = canvas.getContext('2d');
+<button id="payBtn">💰 PAY 20¢</button>
+<button id="playBtn">▶ PLAY (20¢)</button>
+<button id="resetBtn">🔄 RESET</button>
 
-            // ========== SAFE ROUNDRECT FUNCTION ==========
-            function safeRoundRect(ctx, x, y, w, h, r) {
-                if (typeof ctx.roundRect === 'function') {
-                    try {
-                        ctx.roundRect(x, y, w, h, r);
-                        return;
-                    } catch(e) { /* fall through to manual */ }
-                }
-                // Manual fallback
-                if (w < 2 * r) r = w / 2;
-                if (h < 2 * r) r = h / 2;
-                ctx.moveTo(x + r, y);
-                ctx.lineTo(x + w - r, y);
-                ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-                ctx.lineTo(x + w, y + h - r);
-                ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-                ctx.lineTo(x + r, y + h);
-                ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-                ctx.lineTo(x, y + r);
-                ctx.quadraticCurveTo(x, y, x + r, y);
-            }
+<div id="errorBox"></div>
+<div id="logBox">Log:</div>
 
-            // ========== STATE ==========
-            let credits = 100;
-            let landings = 0;
-            let crashes = 0;
-            let gameActive = false;
+<script>
+// Error catcher
+window.onerror = function(m, s, l, c, e) {
+  var box = document.getElementById('errorBox');
+  box.style.display = 'block';
+  box.textContent = 'ERROR: ' + m + '\nLine: ' + l;
+  return false;
+};
 
-            let plane = {
-                x: 130,
-                y: 180,
-                vy: 0,
-                angle: 0
-            };
+function log(t) {
+  var b = document.getElementById('logBox');
+  b.textContent += '\n' + t;
+}
 
-            const carrier = {
-                x: 620,
-                y: 320,
-                width: 130,
-                height: 16
-            };
+try {
+  log('Script starting...');
 
-            const GROUND_Y = 360;
-            const MIN_SAFE_SPEED = -2.8;
-            const MAX_SAFE_SPEED = 2.2;
-            const GRAVITY = 0.12;
-            const LIFT_IMPULSE = -1.1;
-            const HORIZONTAL_SPEED = 2.2;
+  var canvas = document.getElementById('cv');
+  var ctx = canvas.getContext('2d');
+  var W = 720, H = 360;
 
-            const statusEl = document.getElementById('statusMessage');
-            const creditEl = document.getElementById('creditDisplay');
-            const scoreEl = document.getElementById('scoreDisplay');
-            const crashEl = document.getElementById('crashDisplay');
-            const payBtn = document.getElementById('payButton');
-            const playBtn = document.getElementById('playButton');
-            const resetBtn = document.getElementById('resetButton');
+  log('Canvas found: ' + (canvas ? 'yes' : 'no'));
+  log('Context: ' + (ctx ? 'yes' : 'no'));
 
-            // ========== UI UPDATE ==========
-            function updateUI() {
-                creditEl.textContent = credits;
-                scoreEl.textContent = landings;
-                crashEl.textContent = crashes;
-                playBtn.disabled = !(credits >= 20 && !gameActive);
-            }
+  // ---- STATE ----
+  var credits = 100;
+  var landings = 0;
+  var crashes = 0;
+  var flying = false;
 
-            function resetPlane() {
-                plane.x = 130;
-                plane.y = 180;
-                plane.vy = 0;
-                plane.angle = 0;
-            }
+  var plane = { x: 100, y: 150, vy: 0, angle: 0 };
+  var carrier = { x: 540, y: 290, w: 120, h: 16 };
+  var GRAVITY = 0.13;
+  var LIFT = -1.2;
+  var SPEED_X = 2.0;
+  var MIN_VY = -3.0;
+  var MAX_VY = 2.5;
 
-            function startGame() {
-                if (gameActive) return;
-                if (credits < 20) {
-                    statusEl.textContent = '❌ Not enough credits — pay 20¢';
-                    updateUI();
-                    return;
-                }
-                credits -= 20;
-                resetPlane();
-                gameActive = true;
-                statusEl.textContent = '✈️ FLYING · tap to lift';
-                updateUI();
-            }
+  var creditsEl = document.getElementById('credits');
+  var landingsEl = document.getElementById('landings');
+  var crashesEl = document.getElementById('crashes');
+  var msgEl = document.getElementById('msg');
+  var payBtn = document.getElementById('payBtn');
+  var playBtn = document.getElementById('playBtn');
+  var resetBtn = document.getElementById('resetBtn');
 
-            function handleCrash(reason) {
-                if (!gameActive) return;
-                gameActive = false;
-                crashes++;
-                statusEl.textContent = `💥 ${reason} — pay again`;
-                updateUI();
-            }
+  log('DOM elements grabbed');
 
-            function handleLanding() {
-                if (!gameActive) return;
-                if (plane.vy < MIN_SAFE_SPEED) { handleCrash('Too steep!'); return; }
-                if (plane.vy > MAX_SAFE_SPEED) { handleCrash('Too fast!'); return; }
-                gameActive = false;
-                landings++;
-                statusEl.textContent = '✅ PERFECT LANDING! +1';
-                plane.y = carrier.y - 12;
-                plane.vy = 0;
-                plane.angle = 0;
-                updateUI();
-            }
+  function refreshUI() {
+    creditsEl.textContent = credits;
+    landingsEl.textContent = landings;
+    crashesEl.textContent = crashes;
+    playBtn.disabled = !(credits >= 20 && !flying);
+  }
 
-            function checkBounds() {
-                if (!gameActive) return;
-                if (plane.x < 10) { handleCrash('Flew off left'); return; }
-                if (plane.x > 780) { handleCrash('Flew off right'); return; }
+  function setMsg(t) { msgEl.textContent = t; log('MSG: ' + t); }
 
-                const onCarrierX = (plane.x >= carrier.x && plane.x <= carrier.x + carrier.width);
-                const nearDeckY = (plane.y >= carrier.y - 14 && plane.y <= carrier.y + 8);
+  function resetPlane() {
+    plane.x = 100; plane.y = 150; plane.vy = 0; plane.angle = 0;
+  }
 
-                if (onCarrierX && nearDeckY) {
-                    if (plane.vy >= MIN_SAFE_SPEED && plane.vy <= MAX_SAFE_SPEED) {
-                        handleLanding();
-                    } else {
-                        handleCrash(plane.vy < MIN_SAFE_SPEED ? 'Too steep!' : 'Too fast!');
-                    }
-                    return;
-                }
+  function startGame() {
+    log('startGame called. flying=' + flying + ' credits=' + credits);
+    if (flying) return;
+    if (credits < 20) { setMsg('Not enough credits'); return; }
+    credits = credits - 20;
+    resetPlane();
+    flying = true;
+    setMsg('FLYING — tap canvas to lift!');
+    refreshUI();
+  }
 
-                if (plane.y >= GROUND_Y - 8) {
-                    if (!onCarrierX) {
-                        handleCrash('Splashdown!');
-                    } else {
-                        if (plane.vy >= MIN_SAFE_SPEED && plane.vy <= MAX_SAFE_SPEED) {
-                            handleLanding();
-                        } else {
-                            handleCrash('Hard landing');
-                        }
-                    }
-                }
-            }
+  function crash(reason) {
+    if (!flying) return;
+    flying = false;
+    crashes = crashes + 1;
+    setMsg('CRASH: ' + reason);
+    refreshUI();
+  }
 
-            function updatePhysics() {
-                if (!gameActive) return;
-                plane.vy += GRAVITY;
-                if (plane.vy > 5) plane.vy = 5;
-                if (plane.vy < -5) plane.vy = -5;
-                plane.y += plane.vy;
-                plane.angle = Math.max(-0.3, Math.min(0.3, plane.vy * 0.1));
-                plane.x += HORIZONTAL_SPEED;
-                checkBounds();
-            }
+  function landed() {
+    if (!flying) return;
+    flying = false;
+    landings = landings + 1;
+    setMsg('LANDED! +1');
+    plane.y = carrier.y - 12;
+    plane.vy = 0;
+    plane.angle = 0;
+    refreshUI();
+  }
 
-            // ========== DRAW ==========
-            function drawSkyAndSea() {
-                const skyGrad = ctx.createLinearGradient(0, 0, 0, 400);
-                skyGrad.addColorStop(0, '#1c3f5c');
-                skyGrad.addColorStop(0.7, '#4f7b9c');
-                ctx.fillStyle = skyGrad;
-                ctx.fillRect(0, 0, 800, 400);
+  function checkLanding() {
+    if (!flying) return;
+    if (plane.x < 5) { crash('off left'); return; }
+    if (plane.x > W - 5) { crash('off right'); return; }
 
-                // clouds
-                ctx.fillStyle = 'rgba(255,255,255,0.18)';
-                ctx.beginPath();
-                ctx.arc(120, 70, 40, 0, Math.PI*2);
-                ctx.arc(170, 50, 35, 0, Math.PI*2);
-                ctx.arc(70, 60, 30, 0, Math.PI*2);
-                ctx.fill();
-                ctx.beginPath();
-                ctx.arc(650, 100, 45, 0, Math.PI*2);
-                ctx.arc(710, 80, 35, 0, Math.PI*2);
-                ctx.arc(600, 80, 30, 0, Math.PI*2);
-                ctx.fill();
+    var onDeckX = (plane.x >= carrier.x && plane.x <= carrier.x + carrier.w);
+    var nearDeckY = (plane.y >= carrier.y - 12 && plane.y <= carrier.y + 10);
 
-                // sea
-                const seaGrad = ctx.createLinearGradient(0, 340, 0, 400);
-                seaGrad.addColorStop(0, '#1e4b6e');
-                seaGrad.addColorStop(1, '#0a1c2b');
-                ctx.fillStyle = seaGrad;
-                ctx.fillRect(0, 340, 800, 60);
+    if (onDeckX && nearDeckY) {
+      if (plane.vy >= MIN_VY && plane.vy <= MAX_VY) landed();
+      else crash(plane.vy < MIN_VY ? 'too steep' : 'too fast');
+      return;
+    }
 
-                // waves
-                ctx.strokeStyle = 'rgba(153,201,224,0.5)';
-                ctx.lineWidth = 2;
-                const t = Date.now() * 0.002;
-                for (let i=0; i<15; i++) {
-                    let x = (i*70 + t*20) % 900 - 50;
-                    let y = 350 + Math.sin(i*0.8 + t)*6;
-                    ctx.beginPath();
-                    ctx.moveTo(x, y);
-                    ctx.lineTo(x+35, y-5);
-                    ctx.stroke();
-                }
-            }
+    if (plane.y >= 320) {
+      if (onDeckX && plane.vy >= MIN_VY && plane.vy <= MAX_VY) landed();
+      else if (onDeckX) crash('hard landing');
+      else crash('splashdown');
+    }
+  }
 
-            function drawCarrier() {
-                ctx.save();
-                ctx.shadowColor = 'rgba(0,0,0,0.5)';
-                ctx.shadowBlur = 12;
-                ctx.fillStyle = '#3a4e5e';
-                ctx.beginPath();
-                safeRoundRect(ctx, carrier.x, carrier.y, carrier.width, carrier.height, 8);
-                ctx.fill();
-                ctx.restore();
+  function update() {
+    if (!flying) return;
+    plane.vy += GRAVITY;
+    if (plane.vy > 5) plane.vy = 5;
+    if (plane.vy < -5) plane.vy = -5;
+    plane.y += plane.vy;
+    plane.angle = plane.vy * 0.08;
+    if (plane.angle > 0.3) plane.angle = 0.3;
+    if (plane.angle < -0.3) plane.angle = -0.3;
+    plane.x += SPEED_X;
+    checkLanding();
+  }
 
-                // markings
-                ctx.fillStyle = '#f0e68c';
-                ctx.fillRect(carrier.x+10, carrier.y-2, 30, 4);
-                ctx.fillRect(carrier.x+90, carrier.y-2, 30, 4);
-                ctx.fillStyle = '#d4af37';
-                for (let i=0; i<5; i++) {
-                    ctx.fillRect(carrier.x+45 + i*10, carrier.y-4, 4, 8);
-                }
+  function draw() {
+    // sky
+    ctx.fillStyle = '#2b5b7a';
+    ctx.fillRect(0, 0, W, 320);
+    // sea
+    ctx.fillStyle = '#123a52';
+    ctx.fillRect(0, 320, W, 40);
+    // carrier
+    ctx.fillStyle = '#3a4e5e';
+    ctx.fillRect(carrier.x, carrier.y, carrier.w, carrier.h);
+    ctx.fillStyle = '#f0e68c';
+    ctx.fillRect(carrier.x + 8, carrier.y - 2, 22, 4);
+    ctx.fillRect(carrier.x + 85, carrier.y - 2, 22, 4);
+    ctx.fillStyle = '#4b3a2b';
+    ctx.fillRect(carrier.x + 88, carrier.y - 24, 20, 24);
+    // plane
+    ctx.save();
+    ctx.translate(plane.x, plane.y);
+    ctx.rotate(plane.angle);
+    ctx.fillStyle = '#d9e9ff';
+    ctx.beginPath();
+    ctx.moveTo(18, 0);
+    ctx.lineTo(-12, -8);
+    ctx.lineTo(-8, 0);
+    ctx.lineTo(-12, 8);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#90a8c0';
+    ctx.fillRect(-8, -10, 16, 4);
+    ctx.fillRect(-8, 6, 16, 4);
+    ctx.restore();
 
-                // tower
-                ctx.fillStyle = '#4b3a2b';
-                ctx.beginPath();
-                safeRoundRect(ctx, carrier.x+95, carrier.y-28, 24, 28, 6);
-                ctx.fill();
-                ctx.fillStyle = '#b0c4de';
-                ctx.beginPath();
-                ctx.arc(carrier.x+107, carrier.y-32, 8, 0, Math.PI*2);
-                ctx.fill();
+    // overlay when not flying
+    if (!flying) {
+      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 22px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('PAY 20¢ TO FLY', W/2, H/2);
+      ctx.textAlign = 'start';
+    }
+  }
 
-                // label
-                ctx.shadowBlur = 20;
-                ctx.shadowColor = 'rgba(255,217,102,0.7)';
-                ctx.font = 'bold 13px system-ui';
-                ctx.fillStyle = 'rgba(255,255,255,0.9)';
-                ctx.fillText('LAND HERE', carrier.x+15, carrier.y-18);
-                ctx.shadowBlur = 0;
-            }
+  function loop() {
+    update();
+    draw();
+    requestAnimationFrame(loop);
+  }
 
-            function drawPlane() {
-                ctx.save();
-                ctx.translate(plane.x, plane.y);
-                ctx.rotate(plane.angle);
+  // ---- CONTROLS ----
+  function lift(e) {
+    if (e) e.preventDefault();
+    if (!flying) return;
+    plane.vy += LIFT;
+    if (plane.vy < -4.5) plane.vy = -4.5;
+  }
 
-                ctx.shadowColor = 'rgba(0,0,0,0.6)';
-                ctx.shadowBlur = 10;
+  window.addEventListener('keydown', function(e) {
+    if (e.key === ' ' || e.code === 'Space') { e.preventDefault(); lift(); }
+  });
+  canvas.addEventListener('mousedown', lift);
+  canvas.addEventListener('touchstart', lift, { passive: false });
 
-                // body
-                ctx.fillStyle = '#d9e9ff';
-                ctx.beginPath();
-                ctx.moveTo(18, 0);
-                ctx.lineTo(-12, -8);
-                ctx.lineTo(-8, 0);
-                ctx.lineTo(-12, 8);
-                ctx.closePath();
-                ctx.fill();
+  // ---- BUTTONS (using onclick for maximum compatibility) ----
+  payBtn.onclick = function() {
+    log('PAY clicked');
+    credits += 20;
+    setMsg('+20 credits');
+    refreshUI();
+  };
 
-                // wings
-                ctx.fillStyle = '#90a8c0';
-                ctx.beginPath();
-                ctx.ellipse(-2, -3, 10, 4, 0, 0, Math.PI*2);
-                ctx.fill();
-                ctx.beginPath();
-                ctx.ellipse(-2, 3, 10, 4, 0, 0, Math.PI*2);
-                ctx.fill();
+  playBtn.onclick = function() {
+    log('PLAY clicked');
+    startGame();
+  };
 
-                // tail
-                ctx.fillStyle = '#b0c4de';
-                ctx.beginPath();
-                ctx.moveTo(-14, -3);
-                ctx.lineTo(-20, -8);
-                ctx.lineTo(-18, -3);
-                ctx.closePath();
-                ctx.fill();
-                ctx.beginPath();
-                ctx.moveTo(-14, 3);
-                ctx.lineTo(-20, 8);
-                ctx.lineTo(-18, 3);
-                ctx.closePath();
-                ctx.fill();
+  resetBtn.onclick = function() {
+    log('RESET clicked');
+    flying = false;
+    landings = 0;
+    crashes = 0;
+    resetPlane();
+    setMsg('Reset done');
+    refreshUI();
+  };
 
-                // cockpit
-                ctx.fillStyle = '#92b8e0';
-                ctx.beginPath();
-                ctx.arc(6, 0, 4, 0, Math.PI*2);
-                ctx.fill();
+  // ---- START ----
+  log('Buttons wired up');
+  resetPlane();
+  refreshUI();
+  setMsg('Ready — tap PAY');
+  loop();
 
-                ctx.restore();
-            }
+  log('Script loaded successfully');
 
-            function drawHUD() {
-                if (!gameActive) return;
-                ctx.font = 'bold 16px monospace';
-                ctx.fillStyle = 'rgba(255,255,255,0.9)';
-                ctx.shadowBlur = 8;
-                ctx.shadowColor = '#000';
-                ctx.fillText('SPEED: ' + plane.vy.toFixed(2), 30, 50);
-                ctx.fillText('ALT: ' + Math.max(0, 330 - Math.floor(plane.y)), 30, 80);
-                ctx.shadowBlur = 0;
-            }
+} catch(err) {
+  var box = document.getElementById('errorBox');
+  box.style.display = 'block';
+  box.textContent = 'CAUGHT ERROR: ' + err.message + '\n' + err.stack;
+}
+</script>
 
-            function drawOverlay() {
-                if (gameActive) return;
-                ctx.font = 'bold 22px system-ui';
-                ctx.fillStyle = 'rgba(255,255,255,0.85)';
-                ctx.shadowBlur = 15;
-                ctx.shadowColor = '#000';
-                ctx.textAlign = 'center';
-                ctx.fillText('⏸️ PAY 20¢ TO FLY', 400, 160);
-                if (credits < 20) {
-                    ctx.font = 'bold 16px system-ui';
-                    ctx.fillStyle = '#ffb3b3';
-                    ctx.fillText('⚠️ Low credits — add funds', 400, 210);
-                }
-                ctx.textAlign = 'start';
-                ctx.shadowBlur = 0;
-            }
-
-            // ========== LOOP ==========
-            function gameLoop() {
-                try {
-                    updatePhysics();
-                    drawSkyAndSea();
-                    drawCarrier();
-                    drawPlane();
-                    drawHUD();
-                    drawOverlay();
-                } catch(err) {
-                    console.error('Render error:', err);
-                    // Try to recover by drawing a simple background
-                    ctx.fillStyle = '#0e1a24';
-                    ctx.fillRect(0, 0, 800, 400);
-                    ctx.fillStyle = '#ffffff';
-                    ctx.font = '16px system-ui';
-                    ctx.fillText('Render error — check console', 250, 200);
-                }
-                requestAnimationFrame(gameLoop);
-            }
-
-            // ========== INPUT ==========
-            function handleLift(e) {
-                if (e) e.preventDefault();
-                if (!gameActive) return;
-       
+</body>
+</html>
